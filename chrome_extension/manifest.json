@@ -1,21 +1,15 @@
 {
-    "manifest_version": 2,
-    "name": "Nikkei Llama2 Extension",
-    "version": "1.0",
-    "description": "Chat extension for Chrome",
-    "permissions": ["activeTab", "http://*/*", "https://*/*"],
-    "content_scripts": [
-      {
-        "matches": ["<all_urls>"],
-        "js": ["content.js"]
-      }
-    ],
-    "browser_action": {
-      "default_popup": "popup.html"
-    },
-    "background": {
-      "scripts": ["background.js"],
-      "persistent": false
+  "manifest_version": 3,
+  "name": "My Nikkei Chat Extension",
+  "version": "1.0",
+  "description": "Chat extension for Nikkei",
+  "permissions": ["activeTab"],
+  "host_permissions": ["http://*/*", "https://*/*"],
+  "content_scripts": [
+    {
+      "matches": ["*://www.nikkei.com/*"],
+      "js": ["content.js"],
+      "css": ["style.css"]
     }
-  }
-  
+  ]
+}
