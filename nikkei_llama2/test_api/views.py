@@ -20,4 +20,4 @@ class TEST(APIView):
             "result": "OK",
         }
         
-        return Response(result), 200
+        return Response(result, status=200)
