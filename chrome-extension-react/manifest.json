@@ -8,7 +8,7 @@
     "content_scripts": [
       {
         "matches": ["<all_urls>"],
-        "js": ["build/static/js/content.3334d9ae.js"],
+        "js": ["build/static/js/content.0857b0a4.js"],
         "css": ["build/static/css/content.9a51d24c.css"]
       }
     ]

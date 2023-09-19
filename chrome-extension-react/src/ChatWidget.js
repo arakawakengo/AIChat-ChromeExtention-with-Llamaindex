@@ -17,7 +17,7 @@ const ChatWidget = () => {
     const sendMessage = async () => {
         const userMessage = { message: newMessage, sender: 'You' };
         
-        const response = await axios.post('http://34.121.174.78:5000/test/', {
+        const response = await axios.post('https://us-central1-nk-intern.cloudfunctions.net/llama2-api', {
             text: newMessage,
         });
       
