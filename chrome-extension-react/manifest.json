@@ -1,13 +1,15 @@
 {
-    "manifest_version": 2,
+    "manifest_version": 3,
     "name": "My React Extension",
     "version": "1.0",
     "description": "An example React Chrome extension",
-    "permissions": ["activeTab", "http://*/*", "https://*/*"],
+    "permissions": ["activeTab"],
+    "host_permissions": ["http://*/*", "https://*/*"],
     "content_scripts": [
       {
         "matches": ["<all_urls>"],
-        "js": ["static/js/content.js"]
+        "js": ["build/static/js/content.3334d9ae.js"],
+        "css": ["build/static/css/content.9a51d24c.css"]
       }
     ]
   }
