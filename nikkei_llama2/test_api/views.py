@@ -16,7 +16,7 @@ class TEST(APIView):
         text = request.data["text"]
         
         result = {
-            "text": text + "!",
+            "text": text + "って言ったか!? 黙れワン!!",
             "result": "OK",
         }
         
