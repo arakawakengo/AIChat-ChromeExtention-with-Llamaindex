@@ -5,6 +5,6 @@ API_PATH = "api/"
 
 urlpatterns = [
     path(API_PATH+'admin/', admin.site.urls),
-    path(API_PATH+"test/", include('test_api.urls')),
+    path(API_PATH+"info/", include('info.urls')),
     path(API_PATH+"llm/", include('llm.urls')),
 ]
