@@ -117,7 +117,3 @@ class RecommendArticle(APIView):
         
         return Response(response_body, status=200)
             
-        
-        
-        
-            
