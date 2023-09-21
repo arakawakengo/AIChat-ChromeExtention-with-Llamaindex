@@ -13,7 +13,7 @@ chrome.contextMenus.onClicked.addListener(function(info, tab) {
     chrome.tabs.sendMessage(tab.id, { action: "ask_question", question: question });
   }
   if (info.menuItemId === "dynamicContextMenu") {
-    const question = `${currentSelectedText}について教えて`;
+    const question = `${currentSelectedText}について教えて！`;
     chrome.tabs.sendMessage(tab.id, { action: "ask_question", question });
   }
 });
