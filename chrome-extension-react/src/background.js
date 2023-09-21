@@ -35,3 +35,28 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
+const getArticleKeywords = async (articleId) => {
+  try {
+      const response = await fetch(`https://us-central1-nk-intern.cloudfunctions.net/llama2-api?kiji_id=${articleId}`);
+      console.log(response)
+      let data = response.data
+      let words = data.topics + data.keywords
+      return words
+  } catch (error) {
+      console.error("Error fetching button texts:", error);
+  }
+};
+
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === 'complete' && tab.url && tab.url.startsWith('https://www.nikkei.com/article/')) {
+    const articleIdMatch = tab.url.match(/www.nikkei.com\/article\/(.+)\//);
+    console.log(articleIdMatch)
+    if (articleIdMatch && articleIdMatch[1]) {
+      const articleId = articleIdMatch[1];
+      getArticleKeywords(articleId).then(articleKeywords => {
+        chrome.tabs.sendMessage(tabId, { action: "send_keywords", data: articleKeywords });
+      });
+    }
+  }
+});

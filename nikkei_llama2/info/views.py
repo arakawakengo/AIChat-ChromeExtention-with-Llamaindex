@@ -41,14 +41,21 @@ class Article(APIView):
         
         token = get_access_token()
         
-        nikkei_api_endpoint = f"https://apigw.dev.n8s.jp/search/v1/article?kiji_id={article_id}&offset=0&volume=10&fields=belong_topic_info%2C%20body"
+        params = {
+            "kiji_id": article_id,
+            "offset": 0,
+            "volume": 10,
+            "fields": "belong_topic_info,body"
+        }
+        
+        nikkei_api_endpoint = f"https://apigw.dev.n8s.jp/search/v1/article"
 
         headers = {
             "accept": "application/json",
             "Authorization": f"Bearer {token}"
         }
         
-        nikkei_api_response = requests.get(nikkei_api_endpoint, headers=headers)
+        nikkei_api_response = requests.get(nikkei_api_endpoint, params=params ,headers=headers)
          
         data = nikkei_api_response.json()["hits"][0]
         
