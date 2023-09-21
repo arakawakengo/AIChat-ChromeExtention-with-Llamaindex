@@ -203,6 +203,7 @@ module.exports = function (webpackEnv) {
     entry: {
       main: paths.appIndexJs,  // 既存のエントリポイント
       content: './src/content.js', // 追加のエントリポイント
+      background: './src/background.js', // 追加のエントリポイント
     },
     output: {
       // The build folder.

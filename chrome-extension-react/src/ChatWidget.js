@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from 'axios';
 import styles from "@chatscope/chat-ui-kit-styles/dist/default/styles.css";
 import {
@@ -33,6 +33,17 @@ const ChatWidget = () => {
     const getDirection = (sender) => {
         return sender === 'You' ? 'outgoing' : 'incoming';
     };
+
+    useEffect(() => {
+        chrome.runtime.onMessage.addListener((request) => {
+          if (request.action === "ask_question") {
+            console.log(request)
+            console.log(request.question)
+            setIsOpen(true);
+            setNewMessage(request.question);
+          }
+        });
+    }, []);
   
     return (
         <div style={{ position: 'fixed', bottom: '10px', right: '10px', width: "300px" }}>

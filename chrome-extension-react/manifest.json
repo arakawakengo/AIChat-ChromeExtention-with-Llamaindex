@@ -3,14 +3,19 @@
     "name": "My React Extension",
     "version": "1.0",
     "description": "An example React Chrome extension",
-    "permissions": ["activeTab"],
+    "permissions": ["activeTab", "contextMenus", "cookies", "https://nikkei.com", "https://nikkei.com/*"],
     "host_permissions": ["http://*/*", "https://*/*"],
+    "background": {
+        "service_worker": "build/static/js/background.js"
+    },
     "content_scripts": [
       {
-        "matches": ["<all_urls>"],
+        "matches": ["https://www.nikkei.com/article/*"],
         "js": ["build/static/js/content.js"],
         "css": ["build/static/css/content.9a51d24c.css"]
       }
-    ]
-  }
-  
+    ],
+    "icons": {
+        "128": "src/assets/denshiba_funny.png"
+    }
+}
