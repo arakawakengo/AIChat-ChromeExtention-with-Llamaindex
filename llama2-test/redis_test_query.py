@@ -1,8 +1,12 @@
-import logging
+import os
 import sys
+import logging
+import textwrap
 
-# ログレベルの設定
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, force=True)
+import warnings
+
+warnings.filterwarnings("ignore")
+
 
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
@@ -16,7 +20,6 @@ model = AutoModelForCausalLM.from_pretrained(
     torch_dtype=torch.float16,
     device_map="auto"
 )
-
 
 from transformers import pipeline
 from langchain.llms import HuggingFacePipeline
@@ -55,64 +58,33 @@ embed_model = LangchainEmbedding(
 
 
 from llama_index import ServiceContext
-from llama_index.text_splitter import SentenceSplitter
-from llama_index.node_parser import SimpleNodeParser
-
-# ノードパーサーの準備
-text_splitter = SentenceSplitter(
-    chunk_size=300,
-    paragraph_separator="\n\n",
-    tokenizer=tokenizer.encode,
-    chunk_overlap=100
-)
-node_parser = SimpleNodeParser.from_defaults(text_splitter=text_splitter)
 
 # サービスコンテキストの準備
 service_context = ServiceContext.from_defaults(
     llm=llm,
-    embed_model=embed_model,
-    node_parser=node_parser,
+    embed_model=embed_model
 )
 
 
-from llama_index import SimpleDirectoryReader
+# stop huggingface warnings
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
-# ドキュメントの読み込み
-documents = SimpleDirectoryReader(
-    input_files=["/home/Nikkei-intern/intern2023-kyoto-team-basilico/llama2-test/data/sample.txt"]
-).load_data()
-
-
+# Uncomment to see debug logs
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
 
 from llama_index import VectorStoreIndex
+from llama_index.vector_stores import RedisVectorStore
+    
 
-# インデックスの作成
-index = VectorStoreIndex.from_documents(
-    documents,
-    service_context=service_context,
+vector_store = RedisVectorStore(
+    index_name="test_300_100",
+    redis_url="redis://localhost:6379"
 )
 
+index = VectorStoreIndex.from_vector_store(vector_store=vector_store, service_context=service_context)
 
-from llama_index.prompts.prompts import QuestionAnswerPrompt
+pgQuery = index.as_query_engine()
+response = pgQuery.query("習近平ってどんな人？")
 
-# QAテンプレートの準備
-qa_template = QuestionAnswerPrompt("""<s>[INST] <<SYS>>
-質問に100文字以内で答えだけを回答してください。
-<</SYS>>
-{query_str}
-
-{context_str} [/INST]
-""")
-
-
-# クエリエンジンの作成
-query_engine = index.as_query_engine(
-    similarity_top_k=3,
-    text_qa_template=qa_template,
-)
-
-
-# 質問応答
-response = query_engine.query("習近平ってどんな人？")
-
-print(response)
+print(textwrap.fill(str(response), 100))

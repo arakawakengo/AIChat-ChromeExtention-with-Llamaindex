@@ -1,8 +1,12 @@
-import logging
+import os
 import sys
+import logging
+import textwrap
 
-# ログレベルの設定
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, force=True)
+import warnings
+
+warnings.filterwarnings("ignore")
+
 
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
@@ -16,7 +20,6 @@ model = AutoModelForCausalLM.from_pretrained(
     torch_dtype=torch.float16,
     device_map="auto"
 )
-
 
 from transformers import pipeline
 from langchain.llms import HuggingFacePipeline
@@ -61,9 +64,9 @@ from llama_index.node_parser import SimpleNodeParser
 # ノードパーサーの準備
 text_splitter = SentenceSplitter(
     chunk_size=300,
+    chunk_overlap=100,
     paragraph_separator="\n\n",
-    tokenizer=tokenizer.encode,
-    chunk_overlap=100
+    tokenizer=tokenizer.encode
 )
 node_parser = SimpleNodeParser.from_defaults(text_splitter=text_splitter)
 
@@ -75,44 +78,38 @@ service_context = ServiceContext.from_defaults(
 )
 
 
-from llama_index import SimpleDirectoryReader
-
-# ドキュメントの読み込み
-documents = SimpleDirectoryReader(
-    input_files=["/home/Nikkei-intern/intern2023-kyoto-team-basilico/llama2-test/data/sample.txt"]
-).load_data()
 
 
+# stop huggingface warnings
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
-from llama_index import VectorStoreIndex
+# Uncomment to see debug logs
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
 
-# インデックスの作成
-index = VectorStoreIndex.from_documents(
-    documents,
-    service_context=service_context,
+from llama_index import VectorStoreIndex, SimpleDirectoryReader, Document
+from llama_index.vector_stores import RedisVectorStore
+from IPython.display import Markdown, display
+
+loader = SimpleDirectoryReader("/home/Nikkei-intern/intern2023-kyoto-team-basilico/llama2-test/data")
+documents = loader.load_data()
+for file in loader.input_files:
+    print(file)
+    # Here is where you would do any preprocessing
+    
+
+from llama_index.storage.storage_context import StorageContext
+
+vector_store = RedisVectorStore(
+    index_name="test_300_100",
+    redis_url="redis://localhost:6379"
 )
 
 
-from llama_index.prompts.prompts import QuestionAnswerPrompt
+storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
-# QAテンプレートの準備
-qa_template = QuestionAnswerPrompt("""<s>[INST] <<SYS>>
-質問に100文字以内で答えだけを回答してください。
-<</SYS>>
-{query_str}
+import gc
 
-{context_str} [/INST]
-""")
-
-
-# クエリエンジンの作成
-query_engine = index.as_query_engine(
-    similarity_top_k=3,
-    text_qa_template=qa_template,
-)
-
-
-# 質問応答
-response = query_engine.query("習近平ってどんな人？")
-
-print(response)
+torch.cuda.empty_cache()
+gc.collect()
+index = VectorStoreIndex.from_documents(documents, storage_context=storage_context, service_context=service_context)
