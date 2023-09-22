@@ -61,10 +61,13 @@ class Article(APIView):
         
         topics = [topic_info["topic_name_long"] for topic_info in data["belong_topic_info"]]
         
+        topics_set = set(topics)
+        keywords_set = set(data["keywords"]) - topics_set
+        
         response_body = {
             "title": data["title"],
-            "topics": topics,
-            "keywords": data["keywords"],
+            "topics": list(topics_set),
+            "keywords": list(keywords_set),
             "body": data["body"],
         }
         
@@ -83,16 +86,16 @@ class RecommendArticle(APIView):
         response = requests.post(morphologic_api_url, headers={"Authorization": f"Bearer {token}"}, data={"sentence": question_text, "nbest_num": 1})
         data = response.json()
         
-        keyword = []
+        keyword = set()
         
         for word in data["items"][0]["words"]:
             if word["pos"] == "名詞":
                 if word["pos_detail1"] != "代名詞":
-                    keyword.append(word["reading"])
+                    keyword.add(word["reading"].strip())
             elif word["pos"] == "形容詞":
-                keyword.append(word["reading"])
+                keyword.add(word["reading"].strip())
         
-        search_keyword = " ".join(keyword)
+        search_keyword = " ".join(list(keyword))
         
         article_search_api_url = "https://apigw.dev.n8s.jp/search/v1/article"
         
