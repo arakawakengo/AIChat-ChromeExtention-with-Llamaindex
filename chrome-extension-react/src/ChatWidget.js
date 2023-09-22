@@ -10,7 +10,8 @@ import {
     Avatar,
     ConversationHeader,
     TypingIndicator,
-    Button
+    Button,
+    MessageGroup,
 } from "@chatscope/chat-ui-kit-react";
 
 
@@ -20,6 +21,7 @@ const ChatWidget = ({ articleKeywords = [] }) => {
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState("");
     const [buttonTexts, setButtonTexts] = useState([]);
+    const [articleOpenMap, setArticleOpenMap] = useState({});
 
     const denshibaIcon = "https://sdl-stickershop.line.naver.jp/products/0/0/1/1101563/android/stickers/4159670.png";
 
@@ -30,6 +32,18 @@ const ChatWidget = ({ articleKeywords = [] }) => {
         return `${hours}:${minutes}`;
     };
 
+    const handleOpenMessageGroup = (index) => {
+        const newArticleOpenMap = { ...articleOpenMap };
+        newArticleOpenMap[index] = true;
+        setArticleOpenMap(newArticleOpenMap);
+    };
+
+    const handleCloseMessageGroup = (index) => {
+        const newArticleOpenMap = { ...articleOpenMap };
+        newArticleOpenMap[index] = false;
+        setArticleOpenMap(newArticleOpenMap);
+    };
+
     const getCurrentArticles = async (text) => {
         const response = await axios.post('https://us-central1-nk-intern.cloudfunctions.net/llama2-api?type=article', {
             text: text
@@ -38,7 +52,7 @@ const ChatWidget = ({ articleKeywords = [] }) => {
 
         let article_messages = [];
         for (let i = 0; i < articles.length; i++) {
-            article_messages.push({ message: articles[i].title, sender: 'Bot', sentTime: getCurrentTime(), article_url: articles[i].url, image_url: articles[i].image_url });
+            article_messages.push({ message: articles[i].title, sender: 'Bot', sentTime: getCurrentTime(), article_url: articles[i].article_url, image_url: articles[i].image_url });
         }
         return article_messages;
     };
@@ -57,13 +71,13 @@ const ChatWidget = ({ articleKeywords = [] }) => {
             text: newMessage,
         });
 
-        // const newRelatedArticleMessages = await getCurrentArticles(newMessage);
+        const newRelatedArticleMessages = await getCurrentArticles(newMessage);
       
         const botMessage = { message: response.data.text, sender: 'Bot', sentTime: getCurrentTime() };
 
         setIsLoading(false);
-        // setMessages([...messages, userMessage, botMessage, newRelatedArticleMessages]);
-        setMessages([...messages, userMessage, botMessage]);
+        setMessages([...messages, userMessage, botMessage, newRelatedArticleMessages]);
+        console.log(messages);
     };
     
 
@@ -115,16 +129,42 @@ const ChatWidget = ({ articleKeywords = [] }) => {
                                 ))}
                             </div>
                             {messages.map((m, index) => (
-                            <Message
-                                key={index}
-                                model={{
-                                message: m.message,
-                                sentTime: m.sentTime,
-                                sender: m.sender,
-                                direction: getDirection(m.sender),
-                                position: 'single'
-                                }}
-                            />
+                                Array.isArray(m) ? (
+                                    articleOpenMap[index] ? (
+                                        <div key={index}>
+                                        <MessageGroup direction="incoming">
+                                            <MessageGroup.Messages>
+                                                {m.map((article, articleIndex) => (
+                                                    <Message
+                                                        key={articleIndex}
+                                                        model={{
+                                                            message: article.message + " <a href='" + article.article_url + "' target='_blank'>記事を読む</a>",
+                                                            sender: article.sender,
+                                                            sentTime: article.sentTime,
+                                                        }}
+                                                    >
+                                                    </Message>
+                                                ))}
+                                            </MessageGroup.Messages>
+                                        </MessageGroup>
+                                        <Button onClick={() => handleCloseMessageGroup(index)}>関連記事を閉じる</Button>
+                                        </div>
+                                    ) : (
+                                        <div key={index}>
+                                            <Button onClick={() => handleOpenMessageGroup(index)}>関連記事を表示</Button>
+                                        </div>
+                                )) : (
+                                    <Message
+                                        key={index}
+                                        model={{
+                                            message: m.message,
+                                            sentTime: m.sentTime,
+                                            sender: m.sender,
+                                            direction: getDirection(m.sender),
+                                            position: 'single',
+                                        }}
+                                    />
+                                )
                             ))}
                         </MessageList>
                         <MessageInput 
