@@ -13,6 +13,7 @@ import {
     Button
 } from "@chatscope/chat-ui-kit-react";
 
+
 const ChatWidget = ({ articleKeywords = [] }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -29,6 +30,19 @@ const ChatWidget = ({ articleKeywords = [] }) => {
         return `${hours}:${minutes}`;
     };
 
+    const getCurrentArticles = async (text) => {
+        const response = await axios.post('https://us-central1-nk-intern.cloudfunctions.net/llama2-api?type=article', {
+            text: text
+        });
+        const articles = response.data;
+
+        let article_messages = [];
+        for (let i = 0; i < articles.length; i++) {
+            article_messages.push({ message: articles[i].title, sender: 'Bot', sentTime: getCurrentTime(), article_url: articles[i].url, image_url: articles[i].image_url });
+        }
+        return article_messages;
+    };
+
     const sendMessage = async () => {
         if (!newMessage) return;
         if (isLoading) return;
@@ -39,13 +53,16 @@ const ChatWidget = ({ articleKeywords = [] }) => {
 
         setMessages([...messages, userMessage]);
         
-        const response = await axios.post('https://us-central1-nk-intern.cloudfunctions.net/llama2-api', {
+        const response = await axios.post('https://us-central1-nk-intern.cloudfunctions.net/llama2-api?type=answer', {
             text: newMessage,
         });
+
+        // const newRelatedArticleMessages = await getCurrentArticles(newMessage);
       
         const botMessage = { message: response.data.text, sender: 'Bot', sentTime: getCurrentTime() };
 
         setIsLoading(false);
+        // setMessages([...messages, userMessage, botMessage, newRelatedArticleMessages]);
         setMessages([...messages, userMessage, botMessage]);
     };
     
@@ -54,13 +71,9 @@ const ChatWidget = ({ articleKeywords = [] }) => {
         return sender === 'You' ? 'outgoing' : 'incoming';
     };
 
-
-
     useEffect(() => {
         chrome.runtime.onMessage.addListener((request) => {
           if (request.action === "ask_question") {
-            console.log(request)
-            console.log(request.question)
             setIsOpen(true);
             setNewMessage(request.question);
           }
@@ -70,8 +83,7 @@ const ChatWidget = ({ articleKeywords = [] }) => {
     useEffect(() => {
         chrome.runtime.onMessage.addListener((request) => {
             if (request.action === "send_keywords") {
-              console.log(request)
-              console.log(request.data)
+                setButtonTexts(request.data);
             }
           });
     }, [articleKeywords]);
@@ -99,7 +111,7 @@ const ChatWidget = ({ articleKeywords = [] }) => {
                                 background: '#555',
                             } }}>
                                 {buttonTexts.map((text, index) => (
-                                    <Button key={index} border>{text}</Button>
+                                    <Button key={index} border onClick={() => setNewMessage(text + "について教えて！")} >{text}</Button>
                                 ))}
                             </div>
                             {messages.map((m, index) => (
